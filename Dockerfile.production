@@ -1,0 +1,28 @@
+FROM php:8.1.12-fpm-alpine3.16
+
+RUN apk add --no-cache openssh curl rsync php oniguruma-dev icu-dev libxml2-dev libzip-dev libpq-dev openldap-dev
+
+RUN docker-php-ext-install mbstring intl xml zip soap posix pgsql pdo_pgsql bcmath ldap
+
+RUN apk --no-cache add pcre-dev ${PHPIZE_DEPS}
+
+
+RUN pecl install -o -f redis && rm -rf /tmp/pear &&  docker-php-ext-enable redis
+RUN pecl install mongodb && rm -rf /tmp/pear &&  docker-php-ext-enable mongodb
+
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+WORKDIR /var/www
+
+RUN apk del -f .build-deps
+
+RUN addgroup -g 1000 www
+RUN adduser -u 1000 -D -s /bin/bash -G www www
+
+RUN chown www:www ./
+
+USER www
+
+EXPOSE 9000
+
+CMD ["php-fpm"]
